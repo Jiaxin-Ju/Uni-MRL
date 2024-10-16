@@ -6,20 +6,20 @@ from torch_geometric.nn import MessagePassing
 from torch_geometric.utils import add_self_loops
 from torch_geometric.nn import global_add_pool, global_mean_pool, global_max_pool
 
-num_atom_type = 119 # including the extra mask tokens
+num_atom_type = 119  # including the extra mask tokens
 num_chirality_tag = 3
 
-num_bond_type = 5 # including aromatic and self-loop edge
-num_bond_direction = 3 
+num_bond_type = 5  # including aromatic and self-loop edge
+num_bond_direction = 3
 
 
 class GINEConv(MessagePassing):
     def __init__(self, emb_dim):
         super(GINEConv, self).__init__()
         self.mlp = nn.Sequential(
-            nn.Linear(emb_dim, 2*emb_dim), 
-            nn.ReLU(), 
-            nn.Linear(2*emb_dim, emb_dim)
+            nn.Linear(emb_dim, 2 * emb_dim),
+            nn.ReLU(),
+            nn.Linear(2 * emb_dim, emb_dim)
         )
         self.edge_embedding1 = nn.Embedding(num_bond_type, emb_dim)
         self.edge_embedding2 = nn.Embedding(num_bond_direction, emb_dim)
@@ -33,12 +33,12 @@ class GINEConv(MessagePassing):
 
         # add features corresponding to self-loop edges.
         self_loop_attr = torch.zeros(x.size(0), 2)
-        self_loop_attr[:,0] = 4 # bond type for self-loop edge
+        self_loop_attr[:, 0] = 4  # bond type for self-loop edge
         self_loop_attr = self_loop_attr.to(edge_attr.device).to(edge_attr.dtype)
         edge_attr = torch.cat((edge_attr, self_loop_attr), dim=0)
 
-        edge_embeddings = self.edge_embedding1(edge_attr[:,0]) + \
-            self.edge_embedding2(edge_attr[:,1])
+        edge_embeddings = self.edge_embedding1(edge_attr[:, 0]) + \
+                          self.edge_embedding2(edge_attr[:, 1])
 
         return self.propagate(edge_index, x=x, edge_attr=edge_embeddings)
 
@@ -59,11 +59,12 @@ class GINet(nn.Module):
     Output:
         node representations
     """
-    def __init__(self, 
-        task='classification', num_layer=5, emb_dim=300, feat_dim=512, 
-        drop_ratio=0, pool='mean', pred_n_layer=2, pred_act='softplus', 
-        llm4sd_x_dim=0
-    ):
+
+    def __init__(self,
+                 task='classification', num_layer=5, emb_dim=300, feat_dim=512,
+                 drop_ratio=0, pool='mean', pred_n_layer=2, pred_act='softplus',
+                 llm4sd_x_dim=0
+                 ):
         super(GINet, self).__init__()
         self.num_layer = num_layer
         self.emb_dim = emb_dim
@@ -100,52 +101,58 @@ class GINet(nn.Module):
             out_dim = 2
         elif self.task == 'regression':
             out_dim = 1
-        
+
         # llm4sd_x (input: 1, N) -> llm4sd_layer (model) -> rule_embedding_h (output: 1, feat_dim)
         self.llm4sd_layer = nn.Sequential(
-            nn.Linear(self.llm4sd_x_dim, emb_dim*2),
+            nn.Linear(self.llm4sd_x_dim, emb_dim * 2),
             nn.Softplus() if pred_act == 'softplus' else nn.ReLU(inplace=True),
-            nn.Linear(emb_dim*2, self.feat_dim),
+            nn.Linear(emb_dim * 2, self.feat_dim),
             nn.BatchNorm1d(self.feat_dim),
-            )
+        )
         self.reduce_layer = nn.Sequential(
-            nn.Linear(self.feat_dim, emb_dim*2),
+            nn.Linear(self.feat_dim, emb_dim * 2),
             nn.Softplus() if pred_act == 'softplus' else nn.ReLU(inplace=True),
-            nn.Linear(emb_dim*2, self.llm4sd_x_dim),
+            nn.Linear(emb_dim * 2, self.llm4sd_x_dim),
             nn.BatchNorm1d(self.llm4sd_x_dim),
-            )
+        )
 
         self.pred_n_layer = max(1, pred_n_layer)
 
-        
         if pred_act == 'relu':
             pred_head_1 = [nn.Linear(self.feat_dim, self.feat_dim // 2), nn.ReLU(inplace=True)]
             pred_head_2 = [nn.Linear(self.new_dim, self.new_dim // 2), nn.ReLU(inplace=True)]
+            pred_head_3 = [nn.Linear(self.llm4sd_x_dim, self.llm4sd_x_dim // 2), nn.ReLU(inplace=True)]
             for _ in range(self.pred_n_layer - 1):
                 pred_head_1.extend([nn.Linear(self.feat_dim // 2, self.feat_dim // 2), nn.ReLU(inplace=True)])
                 pred_head_2.extend([nn.Linear(self.new_dim // 2, self.new_dim // 2), nn.ReLU(inplace=True)])
+                pred_head_3.extend([nn.Linear(self.llm4sd_x_dim // 2, self.llm4sd_x_dim // 2), nn.ReLU(inplace=True)])
             pred_head_1.append(nn.Linear(self.feat_dim // 2, out_dim))
             pred_head_2.append(nn.Linear(self.new_dim // 2, out_dim))
+            pred_head_3.append(nn.Linear(self.llm4sd_x_dim // 2, out_dim))
         elif pred_act == 'softplus':
             pred_head_1 = [nn.Linear(self.feat_dim, self.feat_dim // 2), nn.Softplus()]
             pred_head_2 = [nn.Linear(self.new_dim, self.new_dim // 2), nn.Softplus()]
+            pred_head_3 = [nn.Linear(self.llm4sd_x_dim, self.llm4sd_x_dim // 2), nn.Softplus()]
             for _ in range(self.pred_n_layer - 1):
                 pred_head_1.extend([nn.Linear(self.feat_dim // 2, self.feat_dim // 2), nn.Softplus()])
                 pred_head_2.extend([nn.Linear(self.new_dim // 2, self.new_dim // 2), nn.Softplus()])
+                pred_head_3.extend([nn.Linear(self.llm4sd_x_dim // 2, self.llm4sd_x_dim // 2), nn.Softplus()])
             pred_head_1.append(nn.Linear(self.feat_dim // 2, out_dim))
             pred_head_2.append(nn.Linear(self.new_dim // 2, out_dim))
+            pred_head_3.append(nn.Linear(self.llm4sd_x_dim // 2, out_dim))
         else:
             raise ValueError('Undefined activation function')
 
         self.pred_head_1 = nn.Sequential(*pred_head_1)
         self.pred_head_2 = nn.Sequential(*pred_head_2)
+        self.pred_head_3 = nn.Sequential(*pred_head_3)
 
     def forward(self, data):
         x = data.x
         edge_index = data.edge_index
         edge_attr = data.edge_attr
-        
-        h = self.x_embedding1(x[:,0]) + self.x_embedding2(x[:,1])
+
+        h = self.x_embedding1(x[:, 0]) + self.x_embedding2(x[:, 1])
 
         for layer in range(self.num_layer):
             h = self.gnns[layer](h, edge_index, edge_attr)
@@ -157,11 +164,11 @@ class GINet(nn.Module):
 
         h = self.pool(h, data.batch)
         h = self.feat_lin(h)
-        
+
         rule_h = self.llm4sd_layer(data.llm4sd_x)
         concat_h = h + rule_h
 
-        return h, self.pred_head_1(h), self.pred_head_2(concat_h)
+        return h, self.pred_head_1(h), self.pred_head_2(concat_h), self.pred_head_3(data.llm4sd_x)
 
     def load_my_state_dict(self, state_dict):
         own_state = self.state_dict()
