@@ -351,7 +351,7 @@ def main(config):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset_folder', type=str, default='scaffold_datasets', help="load train/valid/test dataset")
-    parser.add_argument('--dataset', type=str, default='freesolv', help='dataset name')
+    parser.add_argument('--dataset', type=str, default='bbbp', help='dataset name')
     parser.add_argument('--subtask', type=str, default='', help='subtask of tox21/sider/qm9 dataset')
     parser.add_argument('--model', type=str, default='galactica-6.7b', help='LLM model')
     parser.add_argument('--knowledge_type', type=str, default='all', help='synthesize/inference/all')
