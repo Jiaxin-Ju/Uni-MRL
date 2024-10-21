@@ -105,33 +105,31 @@ class GINet(nn.Module):
         self.pred_n_layer = max(1, pred_n_layer)
 
         if pred_act == 'relu':
-            pred_head_1 = [nn.Linear(self.feat_dim, self.feat_dim // 2), nn.ReLU(inplace=True)]
-            pred_head_2 = [nn.Linear(self.new_dim, self.new_dim // 2), nn.ReLU(inplace=True)]
-            pred_head_3 = [nn.Linear(self.llm4sd_x_dim, self.llm4sd_x_dim // 2), nn.ReLU(inplace=True)]
+            pred_head = [
+                nn.Linear(self.new_dim, self.new_dim // 2),
+                nn.ReLU(inplace=True)
+            ]
             for _ in range(self.pred_n_layer - 1):
-                pred_head_1.extend([nn.Linear(self.feat_dim // 2, self.feat_dim // 2), nn.ReLU(inplace=True)])
-                pred_head_2.extend([nn.Linear(self.new_dim // 2, self.new_dim // 2), nn.ReLU(inplace=True)])
-                pred_head_3.extend([nn.Linear(self.llm4sd_x_dim // 2, self.llm4sd_x_dim // 2), nn.ReLU(inplace=True)])
-            pred_head_1.append(nn.Linear(self.feat_dim // 2, out_dim))
-            pred_head_2.append(nn.Linear(self.new_dim // 2, out_dim))
-            pred_head_3.append(nn.Linear(self.llm4sd_x_dim // 2, out_dim))
+                pred_head.extend([
+                    nn.Linear(self.new_dim // 2, self.new_dim // 2),
+                    nn.ReLU(inplace=True),
+                ])
+            pred_head.append(nn.Linear(self.new_dim // 2, out_dim))
         elif pred_act == 'softplus':
-            pred_head_1 = [nn.Linear(self.feat_dim, self.feat_dim // 2), nn.Softplus()]
-            pred_head_2 = [nn.Linear(self.new_dim, self.new_dim // 2), nn.Softplus()]
-            pred_head_3 = [nn.Linear(self.llm4sd_x_dim, self.llm4sd_x_dim // 2), nn.Softplus()]
+            pred_head = [
+                nn.Linear(self.new_dim, self.new_dim // 2),
+                nn.Softplus()
+            ]
             for _ in range(self.pred_n_layer - 1):
-                pred_head_1.extend([nn.Linear(self.feat_dim // 2, self.feat_dim // 2), nn.Softplus()])
-                pred_head_2.extend([nn.Linear(self.new_dim // 2, self.new_dim // 2), nn.Softplus()])
-                pred_head_3.extend([nn.Linear(self.llm4sd_x_dim // 2, self.llm4sd_x_dim // 2), nn.Softplus()])
-            pred_head_1.append(nn.Linear(self.feat_dim // 2, out_dim))
-            pred_head_2.append(nn.Linear(self.new_dim // 2, out_dim))
-            pred_head_3.append(nn.Linear(self.llm4sd_x_dim // 2, out_dim))
+                pred_head.extend([
+                    nn.Linear(self.new_dim // 2, self.new_dim // 2),
+                    nn.Softplus()
+                ])
         else:
             raise ValueError('Undefined activation function')
 
-        self.pred_head_1 = nn.Sequential(*pred_head_1)
-        self.pred_head_2 = nn.Sequential(*pred_head_2)
-        self.pred_head_3 = nn.Sequential(*pred_head_3)
+        pred_head.append(nn.Linear(self.new_dim // 2, out_dim))
+        self.pred_head = nn.Sequential(*pred_head)
 
     def forward(self, data):
         x = data.x
@@ -154,7 +152,7 @@ class GINet(nn.Module):
         # rule_h = self.llm4sd_layer(data.llm4sd_x)
         concat_h = torch.cat([h, data.llm4sd_x], dim=1)
 
-        return h, self.pred_head_1(h), self.pred_head_2(concat_h), self.pred_head_3(data.llm4sd_x)
+        return h, self.pred_head(concat_h)
 
     def load_my_state_dict(self, state_dict):
         own_state = self.state_dict()

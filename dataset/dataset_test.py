@@ -19,12 +19,12 @@ from rdkit.Chem.rdchem import HybridizationType
 from rdkit.Chem.rdchem import BondType as BT
 from rdkit.Chem import AllChem
 from rdkit.Chem.Scaffolds.MurckoScaffold import MurckoScaffoldSmiles
-from rdkit import RDLogger                                                                                                                                                               
-RDLogger.DisableLog('rdApp.*')  
+from rdkit import RDLogger
+
+RDLogger.DisableLog('rdApp.*')
 from dataset.llm4sd_vector import *
 
-
-ATOM_LIST = list(range(0,119))
+ATOM_LIST = list(range(0, 119))
 CHIRALITY_LIST = [
     Chem.rdchem.ChiralType.CHI_UNSPECIFIED,
     Chem.rdchem.ChiralType.CHI_TETRAHEDRAL_CW,
@@ -71,16 +71,16 @@ class MolTestDataset(Dataset):
         if 'qm9' in data_path and target in ['homo', 'lumo', 'gap', 'zpve', 'u0']:
             self.conversion = 27.211386246
             print(target, 'Unit conversion needed!')
-        
+
         self.llm4sd_book = {}
         all_features = []
         llm4sd_features_code, function_names = load_llm4sd_features(dataset_name, subtask, model,
-                                                                    knowledge_type,num_samples)
+                                                                    knowledge_type, num_samples)
         for smiles_str in self.smiles_data:
             smile_feat = gen_smile_feature(llm4sd_features_code, smiles_str, function_names)
             self.llm4sd_book[smiles_str] = smile_feat
             all_features.append(smile_feat)
-        
+
         self.scaler = scaler  # Store scaler
         if self.scaler is not None:
             self.apply_normalization(self.scaler)
@@ -90,14 +90,14 @@ class MolTestDataset(Dataset):
         normalized_features = scaler.transform(all_features)
         for i, smiles_str in enumerate(self.smiles_data):
             self.llm4sd_book[smiles_str] = normalized_features[i]
-        
+
         assert len(set([len(i) for i in self.llm4sd_book.values()])) == 1
 
     def __getitem__(self, index):
         smiles_str = self.smiles_data[index]
         llm4sd_x = torch.tensor(self.llm4sd_book[smiles_str]).float()
         emb_dim = llm4sd_x.size(0)
-        llm4sd_x = llm4sd_x.view(1, emb_dim) 
+        llm4sd_x = llm4sd_x.view(1, emb_dim)
 
         mol = Chem.MolFromSmiles(self.smiles_data[index])
         mol = Chem.AddHs(mol)
@@ -113,8 +113,8 @@ class MolTestDataset(Dataset):
             chirality_idx.append(CHIRALITY_LIST.index(atom.GetChiralTag()))
             atomic_number.append(atom.GetAtomicNum())
 
-        x1 = torch.tensor(type_idx, dtype=torch.long).view(-1,1)
-        x2 = torch.tensor(chirality_idx, dtype=torch.long).view(-1,1)
+        x1 = torch.tensor(type_idx, dtype=torch.long).view(-1, 1)
+        x2 = torch.tensor(chirality_idx, dtype=torch.long).view(-1, 1)
         x = torch.cat([x1, x2], dim=-1)
 
         row, col, edge_feat = [], [], []
@@ -134,9 +134,9 @@ class MolTestDataset(Dataset):
         edge_index = torch.tensor([row, col], dtype=torch.long)
         edge_attr = torch.tensor(np.array(edge_feat), dtype=torch.long)
         if self.task == 'classification':
-            y = torch.tensor(self.labels[index], dtype=torch.long).view(1,-1)
+            y = torch.tensor(self.labels[index], dtype=torch.long).view(1, -1)
         elif self.task == 'regression':
-            y = torch.tensor(self.labels[index] * self.conversion, dtype=torch.float).view(1,-1)
+            y = torch.tensor(self.labels[index] * self.conversion, dtype=torch.float).view(1, -1)
         data = Data(x=x, y=y, llm4sd_x=llm4sd_x, edge_index=edge_index, edge_attr=edge_attr)
         return data
 
@@ -145,12 +145,11 @@ class MolTestDataset(Dataset):
 
 
 class MolTestDatasetWrapper(object):
-    
-    def __init__(self, 
-        batch_size, num_workers, dataset_name, subtask, model, 
-        knowledge_type, num_samples, train_data_path, valid_data_path,
-        test_data_path, task, target):
 
+    def __init__(self,
+                 batch_size, num_workers, dataset_name, subtask, model,
+                 knowledge_type, num_samples, train_data_path, valid_data_path,
+                 test_data_path, task, target):
         super(object, self).__init__()
         self.train_data_path = train_data_path
         self.valid_data_path = valid_data_path
@@ -179,14 +178,16 @@ class MolTestDatasetWrapper(object):
         )
 
         valid_dataset = MolTestDataset(self.valid_data_path, self.target, self.task, self.dataset_name,
-                                       self.subtask, self.model, self.knowledge_type, self.num_samples, scaler=self.scaler)
+                                       self.subtask, self.model, self.knowledge_type, self.num_samples,
+                                       scaler=self.scaler)
         valid_loader = DataLoader(
             valid_dataset, batch_size=self.batch_size, shuffle=True,
             num_workers=self.num_workers, drop_last=False
         )
 
         test_dataset = MolTestDataset(self.test_data_path, self.target, self.task, self.dataset_name,
-                                       self.subtask, self.model, self.knowledge_type, self.num_samples, scaler=self.scaler)
+                                      self.subtask, self.model, self.knowledge_type, self.num_samples,
+                                      scaler=self.scaler)
         test_loader = DataLoader(
             test_dataset, batch_size=self.batch_size, shuffle=True,
             num_workers=self.num_workers, drop_last=False
