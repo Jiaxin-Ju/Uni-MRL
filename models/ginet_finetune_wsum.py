@@ -71,6 +71,8 @@ class GINet(nn.Module):
         self.drop_ratio = drop_ratio
         self.task = task
         self.llm4sd_x_dim = llm4sd_x_dim
+        self.w1 = nn.Parameter(torch.tensor(0.5))
+        self.w2 = nn.Parameter(torch.tensor(0.5))
 
         self.x_embedding1 = nn.Embedding(num_atom_type, emb_dim)
         self.x_embedding2 = nn.Embedding(num_chirality_tag, emb_dim)
@@ -154,9 +156,10 @@ class GINet(nn.Module):
         h = self.pool(h, data.batch)
         h = self.feat_lin(h)
         rule_h = self.llm4sd_proj(data.llm4sd_x)
-        plus_h = h + rule_h
+        normalized_weights = torch.nn.functional.softmax(torch.cat([self.w1.unsqueeze(0), self.w2.unsqueeze(0)]), dim=0)
+        weighted_sum_embedding = normalized_weights[0] * h + normalized_weights[1] * rule_h
         
-        return h, self.pred_head(plus_h)
+        return h, self.pred_head(weighted_sum_embedding)
 
     def load_my_state_dict(self, state_dict):
         own_state = self.state_dict()

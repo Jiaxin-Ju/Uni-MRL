@@ -72,7 +72,9 @@ class GINet(nn.Module):
         self.drop_ratio = drop_ratio
         self.task = task
         self.llm4sd_x_dim = llm4sd_x_dim
-        self.new_dim = self.feat_dim + self.llm4sd_x_dim
+        self.w1 = nn.Parameter(torch.tensor(0.5))
+        self.w2 = nn.Parameter(torch.tensor(0.5))
+        
 
         self.x_embedding1 = nn.Embedding(num_atom_type, emb_dim)
         self.x_embedding2 = nn.Embedding(num_chirality_tag, emb_dim)
@@ -96,6 +98,14 @@ class GINet(nn.Module):
         elif pool == 'add':
             self.pool = global_add_pool
         self.feat_lin = nn.Linear(self.emb_dim, self.feat_dim)
+
+        # Add a new projection layer for contrastive learning
+        self.llm4sd_proj = nn.Sequential(
+            nn.Linear(self.llm4sd_x_dim, self.feat_dim*2),
+            nn.ReLU(),
+            nn.Linear(self.feat_dim*2, self.feat_dim)
+        )
+        self.new_dim = self.feat_dim
 
         if self.task == 'classification':
             out_dim = 2
@@ -148,11 +158,13 @@ class GINet(nn.Module):
 
         h = self.pool(h, data.batch)
         h = self.feat_lin(h)
+        rule_h = self.llm4sd_proj(data.llm4sd_x)
+        #concat_h = torch.cat([h, rule_h], dim=1)
 
-        # rule_h = self.llm4sd_layer(data.llm4sd_x)
-        concat_h = torch.cat([h, data.llm4sd_x], dim=1)
+        normalized_weights = torch.nn.functional.softmax(torch.cat([self.w1.unsqueeze(0), self.w2.unsqueeze(0)]), dim=0)
+        combined_embedding = normalized_weights[0] * h + normalized_weights[1] * rule_h
 
-        return h, self.pred_head(concat_h)
+        return h, rule_h, self.pred_head(combined_embedding)
 
     def load_my_state_dict(self, state_dict):
         own_state = self.state_dict()

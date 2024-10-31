@@ -74,10 +74,7 @@ class FineTune(object):
         if config['dataset']['task'] == 'classification':
             self.criterion = nn.CrossEntropyLoss()
         elif config['dataset']['task'] == 'regression':
-            if self.config["task_name"] in ['qm7', 'qm8', 'qm9']:
-                self.criterion = nn.L1Loss()
-            else:
-                self.criterion = nn.MSELoss()
+            self.criterion = nn.MSELoss()
 
     def _get_device(self):
         if torch.cuda.is_available() and self.config['gpu'] != 'cpu':
@@ -90,7 +87,7 @@ class FineTune(object):
         return device
 
     def _step(self, model, data, n_iter):
-        if self.config["feat_type"] == 'contrastive':
+        if self.config["feat_type"] in ['cc_contrastive', 'ws_contrastive']:
             # get the prediction
             h, rule_h, pred = model(data)  # [N,C]
         else:
@@ -104,12 +101,12 @@ class FineTune(object):
             else:
                 loss = self.criterion(pred, data.y)
 
-        if self.config["feat_type"] == 'contrastive':
+        if self.config["feat_type"] in ['cc_contrastive', 'ws_contrastive']:
             # normalize projection feature vectors
             norm_h = F.normalize(h, dim=1)
             norm_rule_h = F.normalize(rule_h, dim=1)
             contrastive_loss = self.nt_xent_loss(norm_h, norm_rule_h)
-            print('contrastive_loss:', contrastive_loss)
+            # print('contrastive_loss:', contrastive_loss)
             loss += contrastive_loss
         return loss
 
@@ -117,13 +114,6 @@ class FineTune(object):
         train_loader, valid_loader, test_loader = self.dataset.get_data_loaders()
 
         self.normalizer = None
-        if self.config["task_name"] in ['qm7', 'qm9']:
-            labels = []
-            for d, __ in train_loader:
-                labels.append(d.y)
-            labels = torch.cat(labels)
-            self.normalizer = Normalizer(labels)
-            print(self.normalizer.mean, self.normalizer.std, labels.shape)
         if self.config["feat_type"] == 'plus':
             print("Plus the llm4sd and gnn feature ....")
             if self.config['model_type'] == 'gin':
@@ -137,6 +127,11 @@ class FineTune(object):
         elif self.config["feat_type"] == 'molclr':
             print("Running MOLCLR")
             from models.ginet_finetune import GINet
+            model = GINet(self.config['dataset']['task'], **self.config["model"]).to(self.device)
+            model = self._load_pre_trained_weights(model)
+        elif self.config["feat_type"] == 'wei_sum':
+            print("Running weighted sum")
+            from models.ginet_finetune_wsum import GINet
             model = GINet(self.config['dataset']['task'], **self.config["model"]).to(self.device)
             model = self._load_pre_trained_weights(model)
         elif self.config["feat_type"] == 'dir_concat':
@@ -154,9 +149,14 @@ class FineTune(object):
             from models.ginet_finetune_concat import GINet
             model = GINet(self.config['dataset']['task'], **self.config["model"]).to(self.device)
             model = self._load_pre_trained_weights(model)
-        elif self.config["feat_type"] == 'contrastive':
-            print("Directly Concat the llm4sd and gnn feature ....")
-            from models.ginet_finetune_contrastive import GINet
+        elif self.config["feat_type"] == 'ws_contrastive':
+            print("Weighted Sum + contrastive ....")
+            from models.ginet_finetune_ws_contrastive import GINet
+            model = GINet(self.config['dataset']['task'], **self.config["model"]).to(self.device)
+            model = self._load_pre_trained_weights(model)
+        elif self.config["feat_type"] == 'cc_contrastive':
+            print("Concat + contractrive the llm4sd and gnn feature ....")
+            from models.ginet_finetune_cc_contrastive import GINet
             model = GINet(self.config['dataset']['task'], **self.config["model"]).to(self.device)
             model = self._load_pre_trained_weights(model)
         else:
@@ -256,7 +256,7 @@ class FineTune(object):
             for bn, data in enumerate(valid_loader):
                 data = data.to(self.device)
 
-                if self.config["feat_type"] == 'contrastive':
+                if self.config["feat_type"] in ['cc_contrastive', 'ws_contrastive']:
                     # get the prediction
                     h, rule_h, pred = model(data)  # [N,C]
                 else:
@@ -319,7 +319,7 @@ class FineTune(object):
             for bn, data in enumerate(test_loader):
                 data = data.to(self.device)
 
-                if self.config["feat_type"] == 'contrastive':
+                if self.config["feat_type"] in ['cc_contrastive', 'ws_contrastive']:
                     # get the prediction
                     h, rule_h, pred = model(data)  # [N,C]
                 else:
@@ -384,13 +384,13 @@ def main(config):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset_folder', type=str, default='scaffold_datasets', help="load train/valid/test dataset")
-    parser.add_argument('--dataset', type=str, default='bbbp', help='dataset name')
-    parser.add_argument('--subtask', type=str, default='', help='subtask of tox21/sider/qm9 dataset')
-    parser.add_argument('--model', type=str, default='galactica-6.7b', help='LLM model')
+    parser.add_argument('--dataset', type=str, default='qm9', help='dataset name')
+    parser.add_argument('--subtask', type=str, default='alpha', help='subtask of tox21/sider/qm9 dataset')
+    parser.add_argument('--model', type=str, default='galactica-30b', help='LLM model')
     parser.add_argument('--knowledge_type', type=str, default='all', help='synthesize/inference/all')
-    parser.add_argument('--num_samples', type=int, default=30, help='number of sample lists (30/50) for inference')
-    parser.add_argument('--feat_type', type=str, default='contrastive', help='dir_concat or plus')
-    parser.add_argument('--drop_ratio', type=float, default=0.3)
+    parser.add_argument('--num_samples', type=int, default=50, help='number of sample lists (30/50) for inference')
+    parser.add_argument('--feat_type', type=str, default='ws_contrastive', help='dir_concat or plus')
+    parser.add_argument('--drop_ratio', type=float, default=0)
     args = parser.parse_args()
 
     config = yaml.load(open("config_finetune.yaml", "r"), Loader=yaml.FullLoader)
@@ -402,13 +402,9 @@ if __name__ == "__main__":
     config['model']['drop_ratio'] = args.drop_ratio
     config['feat_type'] = args.feat_type
 
-    if args.dataset in ["alpha", "c_v", "Delta_epsilon", "epsilon_HOMO",
-                        "epsilon_LUMO", "G", "H", "mu", "R^2", "U_0", "U", "ZPVE"]:
-        file_folder = os.path.join(args.dataset_folder, 'qm9')
-    else:
-        file_folder = os.path.join(args.dataset_folder, args.dataset.lower())
+    file_folder = os.path.join(args.dataset_folder, args.dataset.lower())
 
-    if args.subtask == "":
+    if args.dataset != "qm9":
         train_file_name = args.dataset.lower() + '_train.csv'
         valid_file_name = args.dataset.lower() + '_valid.csv'
         test_file_name = args.dataset.lower() + '_test.csv'
@@ -477,7 +473,7 @@ if __name__ == "__main__":
         target_list = ["exp"]
 
     elif config['task_name'] == 'qm9':
-        target_list = ['mu', 'alpha', 'homo', 'lumo', 'gap', 'r2', 'zpve', 'cv']
+        target_list = [args.subtask]
 
     else:
         raise ValueError('Undefined downstream task!')
@@ -487,7 +483,7 @@ if __name__ == "__main__":
     headers = ['iteration', 'target', config['feat_type'], 'knowledge_type']
 
     results_list = []
-    for iteration in range(1, 11):  # Loop 10 times
+    for iteration in [1]:  # Loop 10 times
         seed_value = iteration * 42  # Modify this as necessary for different seeds
         random.seed(seed_value)
         np.random.seed(seed_value)
@@ -500,6 +496,7 @@ if __name__ == "__main__":
         iteration_results = []
 
         for target in target_list:
+            print(f"Running {target} ...")
             config['dataset']['target'] = target
             result = main(config)
 
@@ -517,11 +514,16 @@ if __name__ == "__main__":
 
         # Output results after each iteration
         drop_ratio = config['model']['drop_ratio']
-        results_folder = f"experiments_multiView_{config['feat_type']}_{drop_ratio}"
+        if args.dataset != "qm9":
+            results_folder = f"experiments_multiView_{config['feat_type']}_{drop_ratio}"
+            task_name = config['task_name']
+        else:
+            results_folder = f"experiments_multiView_{config['feat_type']}_{drop_ratio}/qm9"
+            task_name = args.subtask
         os.makedirs(results_folder, exist_ok=True)
 
         file_path = '{}/{}_{}_{}_{}_{}finetune.csv'.format(results_folder, config['fine_tune_from'],
-                                                           config['task_name'], args.model,
+                                                           task_name, args.model,
                                                            args.knowledge_type, num_sample)
 
         # Check if file exists
