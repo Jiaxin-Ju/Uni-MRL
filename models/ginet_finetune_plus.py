@@ -50,15 +50,7 @@ class GINEConv(MessagePassing):
 
 
 class GINet(nn.Module):
-    """
-    Args:
-        num_layer (int): the number of GNN layers
-        emb_dim (int): dimensionality of embeddings
-        drop_ratio (float): dropout rate
-        gnn_type: gin, gcn, graphsage, gat
-    Output:
-        node representations
-    """
+    """GIN ablation using element-wise addition of graph and LLM-rule embeddings."""
     def __init__(self, 
         task='classification', num_layer=5, emb_dim=300, feat_dim=512, 
         drop_ratio=0, pool='mean', pred_n_layer=2, pred_act='softplus', 
@@ -77,12 +69,12 @@ class GINet(nn.Module):
         nn.init.xavier_uniform_(self.x_embedding1.weight.data)
         nn.init.xavier_uniform_(self.x_embedding2.weight.data)
 
-        # List of MLPs
+        # Build one message-passing layer per GNN layer.
         self.gnns = nn.ModuleList()
         for layer in range(num_layer):
             self.gnns.append(GINEConv(emb_dim))
 
-        # List of batchnorms
+        # Build one batch-normalization layer per GNN layer.
         self.batch_norms = nn.ModuleList()
         for layer in range(num_layer):
             self.batch_norms.append(nn.BatchNorm1d(emb_dim))
@@ -97,7 +89,7 @@ class GINet(nn.Module):
             raise ValueError(f'Unsupported graph pooling: {pool}')
         self.feat_lin = nn.Linear(self.emb_dim, self.feat_dim)
 
-        # Add a new projection layer for contrastive learning
+        # Project LLM-rule features into the graph embedding space.
         self.llm4sd_proj = nn.Sequential(
             nn.Linear(self.llm4sd_x_dim, self.feat_dim*2),
             nn.ReLU(),
@@ -165,7 +157,7 @@ class GINet(nn.Module):
             if name not in own_state:
                 continue
             if isinstance(param, nn.parameter.Parameter):
-                # backwards compatibility for serialized parameters
+                # Unwrap legacy checkpoint Parameters before copying their tensor data.
                 param = param.data
             if own_state[name].shape == param.shape:
                 own_state[name].copy_(param)

@@ -50,15 +50,7 @@ class GINEConv(MessagePassing):
 
 
 class GINet(nn.Module):
-    """
-    Args:
-        num_layer (int): the number of GNN layers
-        emb_dim (int): dimensionality of embeddings
-        drop_ratio (float): dropout rate
-        gnn_type: gin, gcn, graphsage, gat
-    Output:
-        node representations
-    """
+    """Graph-only GIN baseline."""
     def __init__(self, 
         task='classification', num_layer=5, emb_dim=300, feat_dim=512, 
         drop_ratio=0, pool='mean', pred_n_layer=2, pred_act='softplus',
@@ -76,12 +68,12 @@ class GINet(nn.Module):
         nn.init.xavier_uniform_(self.x_embedding1.weight.data)
         nn.init.xavier_uniform_(self.x_embedding2.weight.data)
 
-        # List of MLPs
+        # Build one message-passing layer per GNN layer.
         self.gnns = nn.ModuleList()
         for layer in range(num_layer):
             self.gnns.append(GINEConv(emb_dim))
 
-        # List of batchnorms
+        # Build one batch-normalization layer per GNN layer.
         self.batch_norms = nn.ModuleList()
         for layer in range(num_layer):
             self.batch_norms.append(nn.BatchNorm1d(emb_dim))
@@ -154,6 +146,6 @@ class GINet(nn.Module):
             if name not in own_state:
                 continue
             if isinstance(param, nn.parameter.Parameter):
-                # backwards compatibility for serialized parameters
+                # Unwrap legacy checkpoint Parameters before copying their tensor data.
                 param = param.data
             own_state[name].copy_(param)

@@ -77,7 +77,7 @@ def load_llm4sd_features(
 
 
 def gen_smile_feature(_generated_code, smiles, valid_function_names):
-    """Evaluate rule functions and coerce invalid/non-finite outputs to zero."""
+    """Evaluate rule functions, replacing failures and non-numeric outputs with zero."""
     molecule = Chem.MolFromSmiles(smiles)
     if molecule is None:
         raise ValueError(f"Invalid SMILES: {smiles}")

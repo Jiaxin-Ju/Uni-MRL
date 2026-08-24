@@ -20,7 +20,7 @@ from torch_geometric.utils.num_nodes import maybe_num_nodes
 num_atom_type = 119 # including the extra mask tokens
 num_chirality_tag = 3
 
-num_bond_type = 5 # including aromatic and self-loop edge
+num_bond_type = 5 # Four RDKit bond types plus one self-loop type.
 num_bond_direction = 3 
 
 
@@ -53,8 +53,6 @@ class GCNConv(MessagePassing):
         nn.init.xavier_uniform_(self.edge_embedding2.weight.data)
 
     def reset_parameters(self):
-        # glorot(self.weight)
-        # zeros(self.bias)
         stdv = math.sqrt(6.0 / (self.weight.size(-2) + self.weight.size(-1)))
         self.weight.data.uniform_(-stdv, stdv)
         self.bias.data.fill_(0)
@@ -84,7 +82,6 @@ class GCNConv(MessagePassing):
         return out
 
     def message(self, x_j, edge_attr):
-        # return x_j if edge_attr is None else edge_attr.view(-1, 1) * x_j
         return x_j if edge_attr is None else edge_attr + x_j
 
     def message_and_aggregate(self, adj_t, x):
@@ -109,12 +106,12 @@ class GCN(nn.Module):
         nn.init.xavier_uniform_(self.x_embedding1.weight.data)
         nn.init.xavier_uniform_(self.x_embedding2.weight.data)
 
-        # List of MLPs
+        # Build one message-passing layer per GNN layer.
         self.gnns = nn.ModuleList()
         for layer in range(num_layer):
             self.gnns.append(GCNConv(emb_dim, aggr="add"))
 
-        # List of batchnorms
+        # Build one batch-normalization layer per GNN layer.
         self.batch_norms = nn.ModuleList()
         for layer in range(num_layer):
             self.batch_norms.append(nn.BatchNorm1d(emb_dim))
@@ -169,7 +166,7 @@ class GCN(nn.Module):
             if name not in own_state:
                 continue
             if isinstance(param, nn.parameter.Parameter):
-                # backwards compatibility for serialized parameters
+                # Unwrap legacy checkpoint Parameters before copying their tensor data.
                 param = param.data
             own_state[name].copy_(param)
 

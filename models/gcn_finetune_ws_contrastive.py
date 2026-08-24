@@ -53,8 +53,6 @@ class GCNConv(MessagePassing):
         nn.init.xavier_uniform_(self.edge_embedding2.weight.data)
 
     def reset_parameters(self):
-        # glorot(self.weight)
-        # zeros(self.bias)
         stdv = math.sqrt(6.0 / (self.weight.size(-2) + self.weight.size(-1)))
         self.weight.data.uniform_(-stdv, stdv)
         self.bias.data.fill_(0)
@@ -84,7 +82,6 @@ class GCNConv(MessagePassing):
         return out
 
     def message(self, x_j, edge_attr):
-        # return x_j if edge_attr is None else edge_attr.view(-1, 1) * x_j
         return x_j if edge_attr is None else edge_attr + x_j
 
     def message_and_aggregate(self, adj_t, x):
@@ -114,12 +111,12 @@ class GCN(nn.Module):
         nn.init.xavier_uniform_(self.x_embedding1.weight.data)
         nn.init.xavier_uniform_(self.x_embedding2.weight.data)
 
-        # List of MLPs
+        # Build one message-passing layer per GNN layer.
         self.gnns = nn.ModuleList()
         for layer in range(num_layer):
             self.gnns.append(GCNConv(emb_dim, aggr="add"))
 
-        # List of batchnorms
+        # Build one batch-normalization layer per GNN layer.
         self.batch_norms = nn.ModuleList()
         for layer in range(num_layer):
             self.batch_norms.append(nn.BatchNorm1d(emb_dim))
@@ -134,7 +131,7 @@ class GCN(nn.Module):
             raise ValueError('Not defined pooling!')
         
         self.feat_lin = nn.Linear(self.emb_dim, self.feat_dim)
-        # Add a new projection layer for contrastive learning
+        # Project LLM-rule features into the graph embedding space.
         self.llm4sd_proj = nn.Sequential(
             nn.Linear(self.llm4sd_x_dim, self.feat_dim*2),
             nn.ReLU(),
@@ -187,7 +184,7 @@ class GCN(nn.Module):
             if name not in own_state:
                 continue
             if isinstance(param, nn.parameter.Parameter):
-                # backwards compatibility for serialized parameters
+                # Unwrap legacy checkpoint Parameters before copying their tensor data.
                 param = param.data
             if own_state[name].shape == param.shape:
                 own_state[name].copy_(param)
