@@ -93,6 +93,8 @@ class GINet(nn.Module):
             self.pool = global_max_pool
         elif pool == 'add':
             self.pool = global_add_pool
+        else:
+            raise ValueError(f'Unsupported graph pooling: {pool}')
         self.feat_lin = nn.Linear(self.emb_dim, self.feat_dim)
 
         # Add a new projection layer for contrastive learning
@@ -121,7 +123,6 @@ class GINet(nn.Module):
                     nn.Linear(self.new_dim//2, self.new_dim//2), 
                     nn.ReLU(inplace=True),
                 ])
-            pred_head.append(nn.Linear(self.new_dim//2, out_dim))
         elif pred_act == 'softplus':
             pred_head = [
                 nn.Linear(self.new_dim, self.new_dim//2), 
@@ -169,4 +170,5 @@ class GINet(nn.Module):
             if isinstance(param, nn.parameter.Parameter):
                 # backwards compatibility for serialized parameters
                 param = param.data
-            own_state[name].copy_(param)
+            if own_state[name].shape == param.shape:
+                own_state[name].copy_(param)

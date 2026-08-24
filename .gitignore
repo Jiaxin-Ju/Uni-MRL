@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+finetune/
+results/
+experiments_multiView_*/
+
+.idea/
+.vscode/
+.DS_Store
