@@ -11,3 +11,5 @@ experiments_multiView_*/
 .idea/
 .vscode/
 .DS_Store
+dataset/eval_code_generation_repo/chemllm-7b/
+/dataset/eval_code_generation_repo/chemllm-7b/
