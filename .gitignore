@@ -5,7 +5,6 @@ __pycache__/
 .ruff_cache/
 
 finetune/
-results/
 experiments_multiView_*/
 
 .idea/

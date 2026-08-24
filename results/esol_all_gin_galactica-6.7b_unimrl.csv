@@ -1,0 +1,12 @@
+row_type,run,seed,dataset,target,model_type,llm_model,feature_mode,knowledge_type,num_samples,drop_ratio,metric,value,best_epoch,graph_weight,llm_weight,runs,avg,std
+run,1,42,esol,ESOL predicted log solubility in mols per litre,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,0.41589677333831787,27,0.49537545442581177,0.5046245455741882,,,
+run,2,84,esol,ESOL predicted log solubility in mols per litre,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,0.4122876226902008,42,0.4910068213939667,0.5089932084083557,,,
+run,3,126,esol,ESOL predicted log solubility in mols per litre,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,0.4176426827907562,83,0.4898325800895691,0.5101674795150757,,,
+run,4,168,esol,ESOL predicted log solubility in mols per litre,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,0.3857991397380829,33,0.4945982098579407,0.5054018497467041,,,
+run,5,210,esol,ESOL predicted log solubility in mols per litre,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,0.3949592113494873,29,0.49545398354530334,0.5045459866523743,,,
+run,6,252,esol,ESOL predicted log solubility in mols per litre,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,0.4124411642551422,31,0.49472084641456604,0.5052791237831116,,,
+run,7,294,esol,ESOL predicted log solubility in mols per litre,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,0.4270583987236023,67,0.4934130609035492,0.5065869092941284,,,
+run,8,336,esol,ESOL predicted log solubility in mols per litre,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,0.41340717673301697,36,0.4935985505580902,0.5064014792442322,,,
+run,9,378,esol,ESOL predicted log solubility in mols per litre,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,0.41542062163352966,31,0.4953695833683014,0.5046303868293762,,,
+run,10,420,esol,ESOL predicted log solubility in mols per litre,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,0.41468745470046997,60,0.49152860045433044,0.5084713697433472,,,
+summary,,,esol,ESOL predicted log solubility in mols per litre,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,,,,,10,0.4109600245952606,0.011836941777119992

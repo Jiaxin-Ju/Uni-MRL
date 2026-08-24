@@ -1,0 +1,12 @@
+row_type,run,seed,dataset,target,model_type,llm_model,feature_mode,knowledge_type,num_samples,drop_ratio,metric,value,best_epoch,graph_weight,llm_weight,runs,avg,std
+run,1,42,freesolv,expt,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,2.2548046112060547,64,0.49475449323654175,0.5052455067634583,,,
+run,2,84,freesolv,expt,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,2.180753707885742,28,0.49710679054260254,0.5028932094573975,,,
+run,3,126,freesolv,expt,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,1.9001394510269165,51,0.49501195549964905,0.5049880743026733,,,
+run,4,168,freesolv,expt,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,2.0165977478027344,8,0.49807456135749817,0.5019254088401794,,,
+run,5,210,freesolv,expt,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,1.9894521236419678,21,0.49760934710502625,0.5023906826972961,,,
+run,6,252,freesolv,expt,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,1.7608095407485962,41,0.49634066224098206,0.5036593675613403,,,
+run,7,294,freesolv,expt,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,2.0287981033325195,97,0.4947371184825897,0.5052629113197327,,,
+run,8,336,freesolv,expt,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,2.0648369789123535,15,0.4974110722541809,0.5025889277458191,,,
+run,9,378,freesolv,expt,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,1.868649959564209,15,0.4981958270072937,0.5018041729927063,,,
+run,10,420,freesolv,expt,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,2.0017688274383545,91,0.4929828643798828,0.5070171356201172,,,
+summary,,,freesolv,expt,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,,,,,10,2.0066611051559446,0.1441502549488014

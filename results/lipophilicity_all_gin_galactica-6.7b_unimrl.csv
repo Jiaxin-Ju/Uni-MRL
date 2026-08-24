@@ -1,0 +1,12 @@
+row_type,run,seed,dataset,target,model_type,llm_model,feature_mode,knowledge_type,num_samples,drop_ratio,metric,value,best_epoch,graph_weight,llm_weight,runs,avg,std
+run,1,42,lipophilicity,exp,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,0.5682652592658997,91,0.49304869771003723,0.5069512724876404,,,
+run,2,84,lipophilicity,exp,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,0.575358510017395,94,0.4948098659515381,0.5051901340484619,,,
+run,3,126,lipophilicity,exp,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,0.5532102584838867,97,0.49454593658447266,0.5054540634155273,,,
+run,4,168,lipophilicity,exp,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,0.5900540947914124,94,0.49736517667770386,0.5026348233222961,,,
+run,5,210,lipophilicity,exp,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,0.5976472496986389,98,0.4994446635246277,0.5005552768707275,,,
+run,6,252,lipophilicity,exp,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,0.5697608590126038,75,0.49821922183036804,0.5017807483673096,,,
+run,7,294,lipophilicity,exp,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,0.5829938650131226,89,0.4940311908721924,0.5059687495231628,,,
+run,8,336,lipophilicity,exp,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,0.5710986852645874,98,0.49624642729759216,0.5037536025047302,,,
+run,9,378,lipophilicity,exp,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,0.6032270789146423,99,0.49303629994392395,0.5069636702537537,,,
+run,10,420,lipophilicity,exp,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,0.5848824381828308,95,0.4974275827407837,0.5025724172592163,,,
+summary,,,lipophilicity,exp,gin,galactica-6.7b,unimrl,all,30,0.0,rmse,,,,,10,0.579649829864502,0.015072395334333138

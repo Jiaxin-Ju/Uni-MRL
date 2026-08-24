@@ -1,0 +1,12 @@
+row_type,run,seed,dataset,target,model_type,llm_model,feature_mode,knowledge_type,num_samples,drop_ratio,metric,value,best_epoch,graph_weight,llm_weight,runs,avg,std
+run,1,42,qm9,epsilon_LUMO,gin,galactica-30b,unimrl,all,50,0.0,mae,0.0928654745221138,97,0.8129609227180481,0.1870390623807907,,,
+run,2,84,qm9,epsilon_LUMO,gin,galactica-30b,unimrl,all,50,0.0,mae,0.09168005734682083,90,0.8155853748321533,0.1844145953655243,,,
+run,3,126,qm9,epsilon_LUMO,gin,galactica-30b,unimrl,all,50,0.0,mae,0.09102308005094528,91,0.812343418598175,0.18765656650066376,,,
+run,4,168,qm9,epsilon_LUMO,gin,galactica-30b,unimrl,all,50,0.0,mae,0.09183534234762192,99,0.8208016753196716,0.17919829487800598,,,
+run,5,210,qm9,epsilon_LUMO,gin,galactica-30b,unimrl,all,50,0.0,mae,0.08895648270845413,99,0.8323239684104919,0.16767598688602448,,,
+run,6,252,qm9,epsilon_LUMO,gin,galactica-30b,unimrl,all,50,0.0,mae,0.09001163393259048,96,0.8004745841026306,0.1995253711938858,,,
+run,7,294,qm9,epsilon_LUMO,gin,galactica-30b,unimrl,all,50,0.0,mae,0.09116987138986588,97,0.8113790154457092,0.18862101435661316,,,
+run,8,336,qm9,epsilon_LUMO,gin,galactica-30b,unimrl,all,50,0.0,mae,0.09148821979761124,97,0.8218461871147156,0.17815376818180084,,,
+run,9,378,qm9,epsilon_LUMO,gin,galactica-30b,unimrl,all,50,0.0,mae,0.09129083156585693,98,0.8194681406021118,0.180531844496727,,,
+run,10,420,qm9,epsilon_LUMO,gin,galactica-30b,unimrl,all,50,0.0,mae,0.09309392422437668,83,0.795127809047699,0.20487220585346222,,,
+summary,,,qm9,epsilon_LUMO,gin,galactica-30b,unimrl,all,50,0.0,mae,,,,,10,0.09134149178862572,0.0012185502870293236
