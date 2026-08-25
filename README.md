@@ -69,6 +69,7 @@ python train.py \
   --model-type gin \
   --feature-mode unimrl \
   --drop-ratio 0.0 \
+  --output-dir results/single_run \
   --runs 1
 ```
 

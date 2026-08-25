@@ -389,7 +389,7 @@ def build_parser():
         "--drop_ratio",
         type=float,
         default=None,
-        help="GNN dropout (paper default: 0.3 for FreeSolv, otherwise 0.0)",
+        help="GNN dropout",
     )
     parser.add_argument("--runs", type=int, default=1)
     parser.add_argument("--seed", type=int, default=42)
@@ -413,7 +413,8 @@ def load_config(args):
     config["model_type"] = args.model_type
     config["feature_mode"] = MODE_ALIASES.get(args.feature_mode, args.feature_mode)
     config["pretrained"] = args.pretrained
-    config["model"]["drop_ratio"] = args.drop_ratio
+    if args.drop_ratio is not None:
+        config["model"]["drop_ratio"] = args.drop_ratio
     if args.epochs is not None:
         config["epochs"] = args.epochs
     if args.batch_size is not None:
@@ -437,14 +438,14 @@ def main(argv=None):
     if args.runs < 1:
         raise ValueError("--runs must be at least 1")
     dataset_name = args.dataset.lower()
-    if args.drop_ratio is None:
-        args.drop_ratio = 0.3 if dataset_name == "freesolv" else 0.0
     if args.llm_model is None:
         args.llm_model = "galactica-30b" if dataset_name == "qm9" else "galactica-6.7b"
     if args.num_samples is None:
         args.num_samples = 50 if dataset_name == "qm9" else 30
     targets = resolve_targets(dataset_name, args.subtask, args.all_subtasks)
     base_config = load_config(args)
+    if args.drop_ratio is None:
+        args.drop_ratio = float(base_config["model"]["drop_ratio"])
     records = []
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)

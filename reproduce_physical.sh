@@ -24,7 +24,7 @@ python train.py \
   --num-samples 30 \
   --model-type gin \
   --feature-mode unimrl \
-  --drop-ratio 0.3 \
+  --drop-ratio 0.0 \
   --runs 10 \
   --device "$device"
 
